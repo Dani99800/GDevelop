@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Block Puzzle Game</title>
+  <link rel="stylesheet" href="styles.css">
+
+<script type='text/javascript' src='//pl25115544.profitablecpmrate.com/69/31/f6/6931f60e6173c03b988ffb72f3db4388.js'></script>
+
+</head>
+<body>
+
+<script type="text/javascript"> 	atOptions = { 		'key' : 'da7f88d4e998233dc8d8f2e42b2b36fc', 		'format' : 'iframe', 		'height' : 60, 		'width' : 468, 		'params' : {} 	}; </script> <script type="text/javascript" src="//www.highperformanceformat.com/da7f88d4e998233dc8d8f2e42b2b36fc/invoke.js"></script>
+
+  <!-- Welcome Screen -->
+  <div class="welcome-screen">
+    <h1>Welcome to Block Puzzle Game</h1>
+    <button id="play-button">Play</button>
+  </div>
+
+  <!-- Game Container -->
+  <div class="game-container hidden">
+    <!-- Scoreboard -->
+    <div id="scoreboard" class="scoreboard">
+      Score: <span id="score">0</span>
+    </div>
+
+    <!-- Game Board -->
+    <div id="game-board" class="game-board"></div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="left-button">Left</button>
+      <button id="rotate-button">Rotate</button>
+      <button id="right-button">Right</button>
+      <button id="swap-button">Swap</button>
+      <button id="restart-button">Restart</button>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div class="game-over-modal hidden">
+    <p>Game Over</p>
+    <button id="restart-game-over">Restart</button>
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
+
+/* General styling */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f0f8ff;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Welcome Screen */
+.welcome-screen {
+  text-align: center;
+}
+
+button {
+  padding: 15px 30px;
+  font-size: 20px;
+  background-color: #00bfff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* Game Container */
+.game-container {
+  text-align: center;
+}
+
+.scoreboard {
+  font-size: 24px;
+  font-weight: bold;
+  padding: 10px;
+  background: yellow;
+  color: black;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(10, 40px);
+  grid-template-rows: repeat(15, 40px);
+  gap: 2px;
+  margin: 20px auto;
+  border: 10px solid;
+  border-image-source: linear-gradient(90deg, violet, indigo, blue, green, yellow, orange, red);
+  border-image-slice: 1;
+}
+
+.cell {
+  width: 40px;
+  height: 40px;
+  background-color: lightgray;
+  border: 1px solid #ccc;
+}
+
+.cell.occupied {
+  border: none;
+}
+
+.controls {
+  margin-top: 20px;
+}
+
+/* Game Over Modal */
+.game-over-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  background: white;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  border-radius: 10px;
+}
+
+.game-over-modal button {
+  margin: 10px;
+}
+
+
+const playButton = document.getElementById('play-button');
+const welcomeScreen = document.querySelector('.welcome-screen');
+const gameContainer = document.querySelector('.game-container');
+const gameBoard = document.getElementById('game-board');
+const scoreDisplay = document.getElementById('score');
+const leftButton = document.getElementById('left-button');
+const rightButton = document.getElementById('right-button');
+const rotateButton = document.getElementById('rotate-button');
+const swapButton = document.getElementById('swap-button');
+const restartButton = document.getElementById('restart-button');
+const gameOverModal = document.querySelector('.game-over-modal');
+const restartGameOverButton = document.getElementById('restart-game-over');
+
+const boardWidth = 10; // Number of columns
+const boardHeight = 15; // Number of rows
+let board = [];
+let activeBlock = null;
+let activeBlockPos = { row: 0, col: 4 };
+let score = 0;
+let gameLoop;
+let isGameRunning = false;
+
+// Dynamically adjust game board size based on screen
+function adjustGameBoardSize() {
+  const cellSize = Math.min(window.innerWidth / (boardWidth + 2), window.innerHeight / (boardHeight + 3));
+  gameBoard.style.gridTemplateColumns = `repeat(${boardWidth}, ${cellSize}px)`;
+  gameBoard.style.gridTemplateRows = `repeat(${boardHeight}, ${cellSize}px)`;
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach(cell => {
+    cell.style.width = `${cellSize}px`;
+    cell.style.height = `${cellSize}px`;
+  });
+}
+
+function initializeBoard() {
+  gameBoard.innerHTML = '';
+  board = Array.from({ length: boardHeight }, () => Array(boardWidth).fill(null));
+  for (let i = 0; i < boardHeight * boardWidth; i++) {
+    const cell = document.createElement('div');
+    cell.classList.add('cell');
+    gameBoard.appendChild(cell);
+  }
+  adjustGameBoardSize();
+}
+
+function startGame() {
+  isGameRunning = true;
+  score = 0;
+  scoreDisplay.textContent = score;
+  welcomeScreen.classList.add('hidden');
+  gameContainer.classList.remove('hidden');
+  initializeBoard();
+  generateBlock();
+  drawBoard();
+  gameLoop = setInterval(moveBlockDown, 500);
+}
+
+function endGame() {
+  isGameRunning = false;
+  clearInterval(gameLoop);
+  gameOverModal.classList.remove('hidden');
+}
+
+function restartGame() {
+  gameOverModal.classList.add('hidden');
+  startGame();
+}
+
+function generateBlock() {
+  activeBlock = {
+    color: ['purple', 'blue', 'green', 'yellow', 'orange', 'red', 'violet'][Math.floor(Math.random() * 7)],
+    shape: [[1, 1, 1], [0, 1, 0]],
+  };
+  activeBlockPos = { row: 0, col: 4 };
+}
+
+function drawBoard() {
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach((cell, index) => {
+    const row = Math.floor(index / boardWidth);
+    const col = index % boardWidth;
+    cell.style.backgroundColor = board[row][col] || 'lightgray';
+  });
+  drawActiveBlock();
+}
+
+function drawActiveBlock() {
+  activeBlock.shape.forEach((row, i) => {
+    row.forEach((cell, j) => {
+      if (cell) {
+        const rowIndex = activeBlockPos.row + i;
+        const colIndex = activeBlockPos.col + j;
+        if (rowIndex >= 0 && rowIndex < boardHeight && colIndex >= 0 && colIndex < boardWidth) {
+          const cellIndex = rowIndex * boardWidth + colIndex;
+          document.querySelectorAll('.cell')[cellIndex].style.backgroundColor = activeBlock.color;
+        }
+      }
+    });
+  });
+}
+
+function canMove(deltaRow, deltaCol) {
+  return activeBlock.shape.every((row, i) =>
+    row.every((cell, j) => {
+      if (cell) {
+        const newRow = activeBlockPos.row + i + deltaRow;
+        const newCol = activeBlockPos.col + j + deltaCol;
+        if (
+          newRow < 0 ||
+          newRow >= boardHeight ||
+          newCol < 0 ||
+          newCol >= boardWidth ||
+          (board[newRow] && board[newRow][newCol])
+        ) {
+          return false;
+        }
+      }
+      return true;
+    })
+  );
+}
+
+function moveBlock(deltaRow, deltaCol) {
+  if (canMove(deltaRow, deltaCol)) {
+    activeBlockPos.row += deltaRow;
+    activeBlockPos.col += deltaCol;
+    drawBoard();
+  }
+}
+
+function moveBlockDown() {
+  if (canMove(1, 0)) {
+    moveBlock(1, 0);
+  } else {
+    placeBlock();
+    clearRows();
+    generateBlock();
+    if (!canMove(0, 0)) {
+      endGame();
+    }
+  }
+}
+
+function placeBlock() {
+  activeBlock.shape.forEach((row, i) => {
+    row.forEach((cell, j) => {
+      if (cell) {
+        const rowIndex = activeBlockPos.row + i;
+        const colIndex = activeBlockPos.col + j;
+        if (rowIndex >= 0) {
+          board[rowIndex][colIndex] = activeBlock.color;
+        }
+      }
+    });
+  });
+}
+
+function clearRows() {
+  for (let i = boardHeight - 1; i >= 0; i--) {
+    if (board[i].every(cell => cell)) {
+      board.splice(i, 1);
+      board.unshift(Array(boardWidth).fill(null));
+      score += 10;
+      scoreDisplay.textContent = score;
+    }
+  }
+}
+
+function rotateBlock() {
+  const newShape = activeBlock.shape[0].map((_, index) =>
+    activeBlock.shape.map(row => row[index]).reverse()
+  );
+  const originalShape = activeBlock.shape;
+  activeBlock.shape = newShape;
+  if (!canMove(0, 0)) {
+    activeBlock.shape = originalShape;
+  }
+  drawBoard();
+}
+
+// Event Listeners
+playButton.addEventListener('click', startGame);
+leftButton.addEventListener('click', () => moveBlock(0, -1));
+rightButton.addEventListener('click', () => moveBlock(0, 1));
+rotateButton.addEventListener('click', rotateBlock);
+swapButton.addEventListener('click', generateBlock);
+restartButton.addEventListener('click', restartGame);
+restartGameOverButton.addEventListener('click', restartGame);
+window.addEventListener('resize', adjustGameBoardSize);
+
+
+
+
+
+
+
+
